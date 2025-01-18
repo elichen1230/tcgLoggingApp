@@ -1,11 +1,11 @@
 import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export function Camera({ onClose }) {
   const [facing, setFacing] = useState("back");
   const [permission, requestPermission] = useCameraPermissions();
-
+  const cameraRef = useRef(null);
   if (!permission) {
     // Camera permissions are still loading.
     return <View />;
@@ -26,14 +26,38 @@ export function Camera({ onClose }) {
   function toggleCameraFacing() {
     setFacing((current) => (current === "back" ? "front" : "back"));
   }
+  async function takePhoto() {
+    if (cameraRef.current) {
+      try {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 1,
+          base64: false,
+          exif: false,
+        });
 
+        // if (onPhotoTaken) {
+        //   onPhotoTaken(photo);
+        // }
+      } catch (error) {
+        console.error("Failed to take photo:", error);
+      }
+    }
+  }
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing={facing}>
+      <CameraView ref={cameraRef} style={styles.camera} facing={facing}>
         <View style={styles.buttonContainer}>
           <TouchableOpacity style={styles.button} onPress={toggleCameraFacing}>
-            <Text style={styles.text}>Flip Camera</Text>
+            <Text style={styles.text}>Flip</Text>
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.button, styles.captureButton]}
+            onPress={takePhoto}
+          >
+            <View style={styles.captureButtonInner} />
+          </TouchableOpacity>
+
           <TouchableOpacity style={styles.button} onPress={onClose}>
             <Text style={styles.text}>Close</Text>
           </TouchableOpacity>
@@ -60,14 +84,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     backgroundColor: "transparent",
     margin: 64,
+    justifyContent: "space-between",
+    alignItems: "flex-end",
   },
   button: {
-    flex: 1,
-    alignSelf: "flex-end",
+    alignItems: "center",
+    padding: 10,
+  },
+  captureButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    justifyContent: "center",
     alignItems: "center",
   },
+  captureButtonInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "white",
+  },
   text: {
-    fontSize: 24,
+    fontSize: 18,
     fontWeight: "bold",
     color: "white",
   },
